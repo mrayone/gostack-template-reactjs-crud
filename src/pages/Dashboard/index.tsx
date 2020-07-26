@@ -27,7 +27,9 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     async function loadFoods(): Promise<void> {
-      // TODO LOAD FOODS
+      const { data: foods } = await api.get<IFoodPlate[]>('/foods');
+
+      setFoods(foods);
     }
 
     loadFoods();
@@ -37,7 +39,9 @@ const Dashboard: React.FC = () => {
     food: Omit<IFoodPlate, 'id' | 'available'>,
   ): Promise<void> {
     try {
-      // TODO ADD A NEW FOOD PLATE TO THE API
+      const { data: foodAdded } = await api.post('/foods', food);
+
+      setFoods([...foods, foodAdded]);
     } catch (err) {
       console.log(err);
     }
@@ -46,11 +50,43 @@ const Dashboard: React.FC = () => {
   async function handleUpdateFood(
     food: Omit<IFoodPlate, 'id' | 'available'>,
   ): Promise<void> {
-    // TODO UPDATE A FOOD PLATE ON THE API
+    try {
+      const findIndex = foods.findIndex(food => food.id === editingFood.id);
+
+      if (findIndex > -1) {
+        const { available } = editingFood;
+        const updatedFood = {
+          ...food,
+          available,
+        };
+        const foodsList = foods.slice();
+        const { data: foodUpdated } = await api.put(
+          `/foods/${editingFood.id}`,
+          updatedFood,
+        );
+
+        foodsList.splice(findIndex, 1, foodUpdated);
+        setFoods(foodsList);
+      }
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   async function handleDeleteFood(id: number): Promise<void> {
-    // TODO DELETE A FOOD PLATE FROM THE API
+    try {
+      await api.delete(`/foods/${id}`);
+      const findIndex = foods.findIndex(food => food.id === id);
+
+      if (findIndex > -1) {
+        const foodsList = foods.slice();
+
+        foodsList.splice(findIndex, 1);
+        setFoods(foodsList);
+      }
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   function toggleModal(): void {
@@ -62,7 +98,8 @@ const Dashboard: React.FC = () => {
   }
 
   function handleEditFood(food: IFoodPlate): void {
-    // TODO SET THE CURRENT EDITING FOOD ID IN THE STATE
+    toggleEditModal();
+    setEditingFood(food);
   }
 
   return (
